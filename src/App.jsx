@@ -34,7 +34,7 @@ export default function App() {
   const generateCode = async () => {
 
     const response = await fetch(
-      ""https://attendance-ui-3.onrender.com/generate-code""
+      "https://attendance-ui-3.onrender.com/generate-code"
     )
 
     const data = await response.json()
@@ -503,3 +503,4 @@ useEffect(() => {
 
   )
 }
+{/* deployment refresh */}
