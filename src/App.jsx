@@ -34,7 +34,7 @@ export default function App() {
   const generateCode = async () => {
 
     const response = await fetch(
-      "https://attendance-ui-3.onrender.com"
+      ""https://attendance-ui-3.onrender.com/generate-code""
     )
 
     const data = await response.json()
@@ -61,7 +61,7 @@ export default function App() {
  const checkFace = async () => {
 
   const response = await fetch(
-    "https://attendance-ui-3.onrender.com"
+    "https://attendance-ui-3.onrender.com/face-status"
   )
 
   const data = await response.json()
@@ -83,7 +83,7 @@ const verifyLocation = () => {
       )
 
       const response = await fetch(
-        "https://attendance-ui-3.onrender.com",
+        "https://attendance-ui-3.onrender.com/verify-location",
         {
           method: "POST",
           headers: {
@@ -109,7 +109,7 @@ const verifyLocation = () => {
 const getAnalytics = async () => {
 
   const response = await fetch(
-    "https://attendance-ui-3.onrender.com"
+    "https://attendance-ui-3.onrender.com/analytics"
   )
 
   const data = await response.json()
@@ -122,7 +122,7 @@ const getAnalytics = async () => {
 const getBehavior = async () => {
 
   const response = await fetch(
-    "https://attendance-ui-3.onrender.com"
+    "https://attendance-ui-3.onrender.com/behavior"
   )
 
   const data = await response.json()
