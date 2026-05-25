@@ -160,7 +160,7 @@ useEffect(() => {
 
       <div className="w-full max-w-md lg:max-w-7xl">
 
- <div className="space-y-6">
+<div className="space-y-6">
 
    {/* HEADER */}
 
@@ -441,6 +441,197 @@ useEffect(() => {
 
 </div>
 
+{activeTab === "analytics" && (
+
+  <div className="space-y-6">
+
+    <div className="bg-white/70 backdrop-blur-2xl rounded-[32px] p-6 shadow-xl border border-white/50">
+
+      <h1 className="text-3xl font-black text-gray-800">
+        Attendance Analytics
+      </h1>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+
+        <div className="bg-violet-50 rounded-3xl p-6">
+
+          <p className="text-gray-500">
+            Attendance Rate
+          </p>
+
+          <h1 className="text-5xl font-black text-violet-700 mt-4">
+            {attendanceRate}%
+          </h1>
+
+        </div>
+
+        <div className="bg-green-50 rounded-3xl p-6">
+
+          <p className="text-gray-500">
+            Present Classes
+          </p>
+
+          <h1 className="text-5xl font-black text-green-700 mt-4">
+            {presentCount}
+          </h1>
+
+        </div>
+
+        <div className="bg-red-50 rounded-3xl p-6">
+
+          <p className="text-gray-500">
+            Absent Classes
+          </p>
+
+          <h1 className="text-5xl font-black text-red-700 mt-4">
+            {absentCount}
+          </h1>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+)}
+{activeTab === "history" && (
+
+  <div className="space-y-6">
+
+    <div className="bg-white/70 backdrop-blur-2xl rounded-[32px] p-6 shadow-xl border border-white/50">
+
+      <h1 className="text-3xl font-black text-gray-800">
+        Attendance History
+      </h1>
+
+      <div className="mt-6 space-y-4">
+
+        <div className="bg-green-50 rounded-2xl p-4 flex justify-between">
+
+          <div>
+
+            <h2 className="font-bold">
+              AI Lecture
+            </h2>
+
+            <p className="text-gray-500">
+              Present
+            </p>
+
+          </div>
+
+          <span className="text-green-600 font-bold">
+            Today
+          </span>
+
+        </div>
+
+        <div className="bg-red-50 rounded-2xl p-4 flex justify-between">
+
+          <div>
+
+            <h2 className="font-bold">
+              DBMS Lab
+            </h2>
+
+            <p className="text-gray-500">
+              Absent
+            </p>
+
+          </div>
+
+          <span className="text-red-600 font-bold">
+            Yesterday
+          </span>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+)}
+{activeTab === "profile" && (
+
+  <div className="mt-6 bg-white/70 backdrop-blur-2xl rounded-[32px] p-6 shadow-xl border border-white/50">
+
+    <div className="flex flex-col items-center">
+
+      <div className="w-28 h-28 rounded-full bg-gradient-to-br from-violet-500 to-blue-500 flex items-center justify-center text-white text-4xl font-bold">
+
+        S
+
+      </div>
+
+      <h1 className="text-3xl font-black text-gray-800 mt-4">
+        Sarthak Choudhary
+      </h1>
+
+      <p className="text-gray-500 mt-1">
+        AI & Machine Learning
+      </p>
+
+    </div>
+
+    <div className="grid grid-cols-2 gap-4 mt-8">
+
+      <div className="bg-violet-50 rounded-2xl p-4">
+
+        <p className="text-gray-500">
+          Roll Number
+        </p>
+
+        <h2 className="text-xl font-bold text-violet-700 mt-2">
+          AIML-203
+        </h2>
+
+      </div>
+
+      <div className="bg-blue-50 rounded-2xl p-4">
+
+        <p className="text-gray-500">
+          Attendance
+        </p>
+
+        <h2 className="text-xl font-bold text-blue-700 mt-2">
+          {attendanceRate}%
+        </h2>
+
+      </div>
+
+    </div>
+
+    <div className="mt-6 bg-green-50 rounded-2xl p-4 flex items-center justify-between">
+
+      <div>
+
+        <p className="text-gray-500">
+          Verification Status
+        </p>
+
+        <h2 className="font-bold text-green-700 mt-1">
+          Verified Student
+        </h2>
+
+      </div>
+
+      <BadgeCheck className="text-green-600" size={36} />
+
+    </div>
+
+    <button className="w-full h-14 mt-6 rounded-2xl bg-gradient-to-r from-violet-600 to-blue-500 text-white font-bold shadow-lg">
+
+      Edit Profile
+
+    </button>
+
+  </div>
+
+)} 
 {/* BOTTOM NAVIGATION */}
 
 <div className="fixed bottom-5 left-1/2 -translate-x-1/2 w-[90%] max-w-md bg-white/80 backdrop-blur-2xl border border-white/50 rounded-3xl shadow-xl px-6 py-4 flex justify-between items-center">
