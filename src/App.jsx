@@ -208,11 +208,14 @@ useEffect(() => {
 
              {cameraOn ? (
 
-  <Webcam
-    audio={false}
-    screenshotFormat="image/jpeg"
-    className="w-full h-full object-cover"
-  />
+ <Webcam
+  audio={false}
+  screenshotFormat="image/jpeg"
+  videoConstraints={{
+    facingMode: "user"
+  }}
+  className="w-full h-full object-cover rounded-3xl"
+/>
 
 ) : (
 
