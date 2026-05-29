@@ -15,13 +15,52 @@ def face_status():
         "status": "recognized"
     })
 
-@app.route("/generate-code")
+@app.route("/generate-code", methods=["POST"])
 def generate_code():
-    code = random.randint(100000, 999999)
+
+    global stored_otp
+
+    data = request.json
+
+    phone = data["phone"]
+
+    code = str(random.randint(100000, 999999))
+
+    stored_otp = code
+
+    print(f"OTP for {phone}: {code}")
 
     return jsonify({
-        "code": str(code)
+        "success": True,
+        "code": code
     })
+
+stored_otp = ""
+
+@app.route("/verify-otp", methods=["POST"])
+def verify_otp():
+
+    global stored_otp
+
+    data = request.get_json()
+
+    entered_otp = str(data.get("otp"))
+
+    print("ENTERED:", entered_otp)
+    print("STORED:", stored_otp)
+
+    if entered_otp.strip() == stored_otp.strip():
+
+        return jsonify({
+            "verified": True,
+            "message": "Attendance Verified"
+        })
+
+    return jsonify({
+        "verified": False,
+        "message": "Wrong OTP"
+    })
+
 
 @app.route("/verify-location", methods=["POST"])
 def verify_location():
@@ -79,4 +118,4 @@ def behavior():
     })
 
 if __name__ == "__main__":
-    app.run(debug=True)
+   app.run(host="0.0.0.0")
