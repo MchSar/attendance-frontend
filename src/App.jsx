@@ -1,3 +1,5 @@
+import { ToastContainer, toast } from "react-toastify"
+import "react-toastify/dist/ReactToastify.css"
 import * as faceapi from "face-api.js"
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
@@ -39,6 +41,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState("home")
   const [cameraOn, setCameraOn] = useState(false)
   const [faceDetected, setFaceDetected] = useState(false)
+  const [faceStatus, setFaceStatus] = useState("No Face")
   const [identityVerified, setIdentityVerified] =
   useState(false)
   const [location, setLocation] = useState("Detecting...")
@@ -57,8 +60,22 @@ export default function App() {
   const [attendanceHistory, setAttendanceHistory] = useState([])
   const [liveAttendance, setLiveAttendance] = useState([])
   const [darkMode, setDarkMode] = useState(false)
+  const [voiceEnabled, setVoiceEnabled] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
+  const [currentTime, setCurrentTime] = useState("")
+  const [activityFeed, setActivityFeed] = useState([])
   const [selectedSubject, setSelectedSubject] = useState("AI")
+  const [animatedAttendance, setAnimatedAttendance] = useState(0)
+  const [animatedPresent, setAnimatedPresent] = useState(0)
+  const [animatedAbsent, setAnimatedAbsent] = useState(0)
+  const [showEditProfile, setShowEditProfile] =
+  useState(false)
+
+const [editPhone, setEditPhone] =
+  useState(studentData?.phone || "")
+
+const [editPassword, setEditPassword] =
+  useState("")
   const heatmapData = [
     
     
@@ -99,6 +116,7 @@ const subjectAnalytics = [
 
 ]
   const webcamRef = useRef(null)
+  const canvasRef = useRef(null)
   const [faceLoading, setFaceLoading] = useState(false)
   const [faceProgress, setFaceProgress] = useState(0)
   const [modelsLoaded, setModelsLoaded] = useState(false)
@@ -176,6 +194,15 @@ status: "Active"
 }
 
 ]
+const teachers = [
+  {
+    id: "T001",
+    password: "admin123",
+    name: "Prof. AI Faculty",
+    role: "teacher"
+  }
+]
+const [teacherLoggedIn, setTeacherLoggedIn] = useState(false)
 
 const demoOtps = {
 
@@ -190,6 +217,56 @@ const demoOtps = {
   "9643549202": "641982",
 
   "6295096193": "518374"
+
+}
+const speak = (text) => {
+
+  if (!voiceEnabled) return
+
+  const speech =
+    new SpeechSynthesisUtterance(text)
+
+  speech.rate = 1
+  speech.pitch = 1
+
+  window.speechSynthesis.speak(speech)
+
+}
+const addActivity = (message) => {
+
+  setActivityFeed(prev => [
+
+    {
+      message,
+      time: new Date().toLocaleTimeString()
+    },
+
+    ...prev.slice(0, 9)
+
+  ])
+
+}
+const getRiskLevel = () => {
+
+  if (attendanceRate >= 85)
+    return {
+      level: "Low",
+      color: "text-green-600",
+      message: "Excellent Attendance"
+    }
+
+  if (attendanceRate >= 75)
+    return {
+      level: "Medium",
+      color: "text-orange-500",
+      message: "Maintain Regular Attendance"
+    }
+
+  return {
+    level: "High",
+    color: "text-red-600",
+    message: "Risk of Attendance Shortage"
+  }
 
 }
 
@@ -229,7 +306,7 @@ const generateCode = async () => {
     window.confirmationResult =
       confirmation
 
-    alert("OTP Sent Successfully")
+    toast.success("OTP Sent Successfully")
     setDemoOtp(
   demoOtps[phone] || "No Demo OTP Found"
 )
@@ -238,7 +315,7 @@ const generateCode = async () => {
 
     console.log(error)
 
-    alert(error.message)
+    toast.error(error.message)
 
   }
 
@@ -249,7 +326,7 @@ const verifyCode = async () => {
   console.log("Verify Clicked")
   if (!identityVerified) {
 
-  alert("Verify Face First")
+  toast.error("Verify Face First")
 
   return
 
@@ -277,7 +354,7 @@ const realOtp =
 
 } catch {
 
-  alert("Invalid OTP")
+  toast.error("Invalid OTP")
 
   return
 
@@ -292,7 +369,9 @@ const alreadyMarked = attendanceHistory.some(
 
 if (alreadyMarked) {
 
-  alert("⚠ Attendance already marked for this subject today")
+  toast.warning(
+  "Attendance already marked for this subject today"
+)
 
   return
 
@@ -345,6 +424,10 @@ if (alreadyMarked) {
 setOtpVerified(true)
 
 setVerificationMessage("✅ Attendance Verified Successfully")
+speak("Attendance verified successfully")
+addActivity(
+  `📚 ${selectedSubject} Attendance Marked`
+)
   try {
 
     await addDoc(
@@ -375,11 +458,10 @@ department: studentData?.department || "Unknown",
 
     console.log(error.message)
 
-    alert(error.message)
+    toast.error(error.message)
 
   }
 
-alert("SETTING VERIFIED TRUE")
 
 
 console.log("OTP VERIFIED SUCCESS")
@@ -394,30 +476,45 @@ setTimeout(() => {
 const handleLogin = () => {
 
   const foundStudent = students.find(
-
-    (student) =>
+    student =>
       student.roll === rollNumber &&
       student.password === password
-
   )
 
   if (foundStudent) {
 
-    setLoggedIn(true)
+  setLoggedIn(true)
+  setStudentData(foundStudent)
 
-    setStudentData(foundStudent)
+  addActivity("👤 Student Logged In")
 
-  } else {
-
-    alert("Invalid Roll Number or Password")
-
-  }
-
+  return
 }
+
+  const foundTeacher = teachers.find(
+    teacher =>
+      teacher.id === rollNumber &&
+      teacher.password === password
+  )
+
+  if (foundTeacher) {
+
+  setTeacherLoggedIn(true)
+  setLoggedIn(true)
+  setStudentData(foundTeacher)
+
+  addActivity("👨‍🏫 Teacher Logged In")
+
+  return
+}
+
+  toast.error("Invalid Credentials")
+}
+
 const registerFace = async () => {
   if (!modelsLoaded) {
 
-  alert("Models still loading")
+  toast.warning("Models still loading")
   return
 
 }
@@ -427,19 +524,17 @@ setFaceProgress(10)
 
   if (!cameraOn) {
 
-    alert("Start Camera First")
+    toast.error("Start Camera First")
     return
 
   }
 
   if (!webcamRef.current) {
 
-    alert("Webcam Ref Missing")
+    toast.error("Webcam Ref Missing")
     return
 
   }
-
-  alert("Webcam Found")
 
   await new Promise(resolve =>
   setTimeout(resolve, 1500)
@@ -474,11 +569,7 @@ await new Promise((resolve) => {
   .withFaceDescriptor()
 
 console.log(detection)
-alert(
-  detection
-    ? "FACE DETECTED"
-    : "NO FACE DETECTED"
-)
+
 if (!detection) {
 
   setFaceLoading(false)
@@ -487,7 +578,7 @@ if (!detection) {
 
   setMessage("❌ Face Not Detected")
 
-  alert("Face not detected clearly")
+  toast.error("Face not detected clearly")
 
   return
 
@@ -518,14 +609,70 @@ setFaceDetected(true)
 setAiStatus("Face Registered")
   
 
-alert("✅ Face Registered Successfully")
+toast.success("Face Registered Successfully")
+
+}
+  const startFaceTracking = async () => {
+
+  if (!webcamRef.current || !canvasRef.current)
+    return
+
+  const video =
+    webcamRef.current.video
+
+  const canvas =
+    canvasRef.current
+
+  const ctx =
+    canvas.getContext("2d")
+
+  canvas.width = video.videoWidth
+  canvas.height = video.videoHeight
+
+  setInterval(async () => {
+
+    const detection =
+      await faceapi.detectSingleFace(
+        video,
+        new faceapi.TinyFaceDetectorOptions()
+      )
+
+    ctx.clearRect(
+      0,
+      0,
+      canvas.width,
+      canvas.height
+    )
+
+    if (detection) {
+
+  setFaceStatus("Face Detected")
+
+  const box = detection.box
+
+  ctx.strokeStyle = "#00ff88"
+  ctx.lineWidth = 3
+
+  ctx.strokeRect(
+    box.x,
+    box.y,
+    box.width,
+    box.height
+  )
+
+} else {
+
+  setFaceStatus("No Face")
+
+}
+  }, 200)
 
 }
 const detectFace = async () => {
 
   if (!webcamRef.current) {
 
-    alert("Start Camera First")
+    toast.error("Start Camera First")
     return
 
   }
@@ -535,7 +682,7 @@ const detectFace = async () => {
 
   if (!screenshot) {
 
-    alert("Camera not ready")
+    toast.error("Camera not ready")
     return
 
   }
@@ -561,7 +708,7 @@ const detection = await faceapi
 
 if (!detection) {
 
-  alert("No face detected")
+  toast.error("No face detected")
 
   return
 
@@ -574,7 +721,7 @@ const savedFace = localStorage.getItem(
 
 if (!savedFace) {
 
-  alert("No Registered Face Found")
+  toast.error("No Registered Face Found")
 
   return
 
@@ -596,6 +743,8 @@ const savedDescriptor = new Float32Array(
 
     setFaceDetected(true)
     setIdentityVerified(true)
+    speak("Face verified successfully")
+    addActivity("🟢 Face Verified")
     setBlinkDetected(true)
     setAiStatus("Face Verified")
 
@@ -617,7 +766,7 @@ const checkLiveness = async () => {
 
   if (!webcamRef.current) {
 
-    alert("Start Camera First")
+    toast.error("Start Camera First")
     return
 
   }
@@ -627,7 +776,7 @@ const checkLiveness = async () => {
 
   if (!screenshot) {
 
-    alert("Camera not ready")
+    toast.error("Camera not ready")
     return
 
   }
@@ -717,6 +866,10 @@ const verifyLocation = () => {
       const data = await response.json()
 
       setLocationVerified(data.verified)
+      if (data.verified) {
+        speak("Location verified")
+  addActivity("📍 GPS Verified")
+}
       setDistance(data.message)
 
     }
@@ -804,7 +957,55 @@ useEffect(() => {
   // useEffect(() => {
 //   getLocation()
 // }, [])
+useEffect(() => {
+
+  const timer = setInterval(() => {
+
+    setCurrentTime(
+      new Date().toLocaleTimeString()
+    )
+
+  }, 1000)
+
+  return () => clearInterval(timer)
+
+}, [])
+useEffect(() => {
+
+  let attendance = 0
+  let present = 0
+  let absent = 0
+
+  const timer = setInterval(() => {
+
+    if (attendance < attendanceRate)
+      attendance += 1
+
+    if (present < presentCount)
+      present += 1
+
+    if (absent < absentCount)
+      absent += 1
+
+    setAnimatedAttendance(attendance)
+    setAnimatedPresent(present)
+    setAnimatedAbsent(absent)
+
+    if (
+      attendance >= attendanceRate &&
+      present >= presentCount &&
+      absent >= absentCount
+    ) {
+      clearInterval(timer)
+    }
+
+  }, 25)
+
+  return () => clearInterval(timer)
+
+}, [attendanceRate, presentCount, absentCount])
  const downloadReport = () => {
+  addActivity("👨‍🏫 Report Downloaded")
 
   const doc = new jsPDF()
 
@@ -903,17 +1104,6 @@ return (
 
         <div className="text-center mb-4">
 
-          <button
-  onClick={() => setDarkMode(!darkMode)}
- className={`absolute top-6 right-6 px-5 py-3 rounded-2xl text-base font-bold shadow-xl duration-300 ${
-  darkMode
-    ? "bg-white text-black"
-    : "bg-black text-white"
-}`}
->
-  {darkMode ? "☀️ Light" : "🌙 Dark"}
-</button>
-
           <h1 className={`text-4xl font-black tracking-tight ${
   darkMode ? "text-white" : "text-gray-800"
 }`}>
@@ -923,6 +1113,26 @@ return (
           <p className="text-gray-500 mt-2">
             Face Recognition + Verification
           </p>
+          <div className="mt-3 flex justify-center">
+
+  <div className="bg-white/70 px-5 py-2 rounded-2xl shadow">
+
+    <span className="font-bold text-violet-700">
+      🕒 {currentTime}
+    </span>
+
+  </div>
+
+</div>
+<div className="mt-3 flex justify-center">
+
+  <div className="px-4 py-2 rounded-full bg-green-100 text-green-700 font-semibold">
+
+    🟢 Attendance Session Active
+
+  </div>
+
+</div>
 
         </div>
 
@@ -956,19 +1166,28 @@ return (
 
       {cameraOn ? (
 
-        <Webcam
-  ref={webcamRef}
-  audio={false}
-  screenshotFormat="image/jpeg"
-  screenshotQuality={1}
-  mirrored={true}
-  videoConstraints={{
-    facingMode: "user",
-    width: 1280,
-    height: 720
-  }}
-  className="w-full h-full object-cover"
-/>
+        <div className="relative w-full h-full">
+
+  <Webcam
+    ref={webcamRef}
+    audio={false}
+    screenshotFormat="image/jpeg"
+    screenshotQuality={1}
+    mirrored={true}
+    videoConstraints={{
+      facingMode: "user",
+      width: 1280,
+      height: 720
+    }}
+    className="w-full h-full object-cover"
+  />
+
+  <canvas
+    ref={canvasRef}
+    className="absolute top-0 left-0 w-full h-full"
+  />
+
+</div>
 
       ) : (
 
@@ -983,8 +1202,35 @@ return (
   <p className="text-center text-sm text-gray-500 mt-4">
     Position your face clearly before scanning
   </p>
+  <div className="flex justify-center mt-3">
 
-  <div className="mt-4 bg-gradient-to-r from-violet-600 to-blue-500 rounded-2xl p-4 shadow-lg">
+  <div
+    className={`px-4 py-2 rounded-full font-semibold ${
+      faceStatus === "Face Detected"
+        ? "bg-green-100 text-green-700"
+        : "bg-red-100 text-red-700"
+    }`}
+  >
+
+    {faceStatus === "Face Detected"
+      ? "🟢 Face Detected"
+      : "🔴 No Face Detected"}
+
+  </div>
+
+</div>
+
+  <div
+  className={`mt-4 rounded-2xl p-4 shadow-lg ${
+    aiStatus === "Real Human Detected"
+      ? "bg-gradient-to-r from-green-500 to-emerald-600"
+      : aiStatus === "Face Verified"
+      ? "bg-gradient-to-r from-green-500 to-teal-500"
+      : aiStatus === "Scanning Face..."
+      ? "bg-gradient-to-r from-orange-500 to-yellow-500"
+      : "bg-gradient-to-r from-violet-600 to-blue-500"
+  }`}
+>
 
   <div className="flex items-center gap-3">
 
@@ -1000,12 +1246,20 @@ return (
 
   <div className="mt-4">
 
-    <button
-      onClick={() => setCameraOn(!cameraOn)}
-      className="w-full h-14 rounded-2xl bg-gradient-to-r from-violet-600 to-blue-500 text-white font-bold"
-    >
-      {cameraOn ? "Stop Scan" : "Start Scan"}
-    </button>
+   <button
+  onClick={() => {
+
+    setCameraOn(!cameraOn)
+
+    setTimeout(() => {
+      startFaceTracking()
+    }, 1000)
+
+  }}
+  className="w-full h-14 rounded-2xl bg-gradient-to-r from-violet-600 to-blue-500 text-white font-bold shadow-lg"
+>
+  {cameraOn ? "Stop Scan" : "Start Scan"}
+</button>
 
     {faceLoading && (
 
@@ -1203,13 +1457,69 @@ return (
 {activeTab === "home" && (
 
 <div className="w-full">
+  <div className={`mb-6 rounded-[32px] p-6 shadow-xl border ${
+  darkMode
+    ? "bg-[#1f2937]/70 border-[#374151]"
+    : "bg-white/70 border-white/50"
+}`}>
+
+  <h1 className={`text-3xl font-black ${
+    darkMode ? "text-white" : "text-gray-800"
+  }`}>
+    👋 Welcome Back, {studentData?.name}
+  </h1>
+  <p className="text-sm text-gray-500 mt-1">
+  Last Login: {new Date().toLocaleDateString()}
+</p>
+
+<p className="text-gray-500 mt-2">
+  {teacherLoggedIn
+    ? "Faculty Portal"
+    : studentData?.department}
+</p>
+<p className="text-sm text-gray-500 mt-1">
+  Last Login: {new Date().toLocaleDateString()}
+</p>
+
+  <div className="grid grid-cols-3 gap-4 mt-6">
+
+    <div className="bg-violet-50 rounded-2xl p-4">
+      <p className="text-gray-500 text-sm">
+        Attendance
+      </p>
+      <h2 className="text-2xl font-black text-violet-700">
+        {attendanceRate}%
+      </h2>
+    </div>
+
+    <div className="bg-green-50 rounded-2xl p-4">
+      <p className="text-gray-500 text-sm">
+        Present
+      </p>
+      <h2 className="text-2xl font-black text-green-700">
+        {presentCount}
+      </h2>
+    </div>
+
+    <div className="bg-orange-50 rounded-2xl p-4">
+      <p className="text-gray-500 text-sm">
+        Risk
+      </p>
+      <h2 className={`text-2xl font-black ${getRiskLevel().color}`}>
+        {getRiskLevel().level}
+      </h2>
+    </div>
+
+  </div>
+
+</div>
   
-<div className="w-full grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8 auto-rows-fr">
+<div className="w-full grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
 
 
   {/* STUDENT BEHAVIOR */}
 
-  <div className={`backdrop-blur-2xl rounded-[32px] p-6 shadow-xl border duration-500 ${
+  <div className={`backdrop-blur-2xl rounded-[32px] p-6 shadow-xl border duration-500 h-full ${
   darkMode
   ? "bg-[#1f2937]/70 border-[#374151]"
   : "bg-white/70 border-white/50"
@@ -1284,7 +1594,7 @@ return (
 
   {/* LOCATION */}
 
-  <div className={`backdrop-blur-2xl rounded-[32px] p-6 shadow-xl border duration-500 ${
+  <div className={`backdrop-blur-2xl rounded-[32px] p-6 shadow-xl border duration-500 h-full ${
   darkMode
     ? "bg-[#1f2937]/70 border-[#374151]"
     : "bg-white/70 border-white/50"
@@ -1332,7 +1642,7 @@ return (
 
   {/* ANALYTICS */}
 
-  <div className={`backdrop-blur-2xl rounded-[32px] p-6 shadow-xl border duration-500 ${
+  <div className={`backdrop-blur-2xl rounded-[32px] p-6 shadow-xl border duration-500 h-full ${
   darkMode
     ? "bg-[#1f2937]/70 border-[#374151]"
     : "bg-white/70 border-white/50"
@@ -1344,7 +1654,7 @@ return (
     </h2>
 
     <h1 className="text-5xl font-black text-violet-600 mt-6">
-      {attendanceRate}%
+      {animatedAttendance}%
     </h1>
 
     <div className="mt-4 bg-green-50 rounded-2xl p-4 flex items-center justify-between">
@@ -1376,14 +1686,14 @@ return (
       <div className="bg-green-50 rounded-2xl p-3">
         <p>Present</p>
         <h2 className="text-xl font-bold">
-          {presentCount}
+          {animatedPresent}
         </h2>
       </div>
 
       <div className="bg-red-50 rounded-2xl p-3">
         <p>Absent</p>
         <h2 className="text-xl font-bold">
-          {absentCount}
+          {animatedAbsent}
         </h2>
       </div>
 
@@ -1393,7 +1703,7 @@ return (
 
   {/* TIMETABLE */}
 
-  <div className={`backdrop-blur-2xl rounded-[32px] p-6 shadow-xl border duration-500 ${
+  <div className={`backdrop-blur-2xl rounded-[32px] p-6 shadow-xl border duration-500 h-full ${
   darkMode
     ? "bg-[#1f2937]/70 border-[#374151]"
     : "bg-white/70 border-white/50"
@@ -1455,7 +1765,7 @@ return (
     </div>
 
   </div>
-<div className="mt-6 bg-white rounded-3xl p-5">
+<div className="mt-6 bg-white rounded-3xl p-5 xl:col-span-4">
 
   <h2 className="text-2xl font-black text-gray-800">
     Subject Analytics
@@ -1502,6 +1812,7 @@ return (
 </div>
 
 )}
+
 
 
 {activeTab === "analytics" && (
@@ -1559,6 +1870,44 @@ return (
       </div>
 
     </div>
+    <div className="bg-white rounded-3xl p-5 mt-6">
+
+  <h2 className="text-2xl font-bold">
+    Live Activity Feed
+  </h2>
+
+  <div className="mt-4 space-y-3">
+
+    {activityFeed.length > 0 ? (
+
+      activityFeed.map((item, index) => (
+
+        <div
+          key={index}
+          className="bg-violet-50 rounded-2xl p-3 flex justify-between"
+        >
+
+          <span>{item.message}</span>
+
+          <span className="text-gray-500 text-sm">
+            {item.time}
+          </span>
+
+        </div>
+
+      ))
+
+    ) : (
+
+      <p className="text-gray-400">
+        No activity yet
+      </p>
+
+    )}
+
+  </div>
+
+</div>
 
   </div>
 
@@ -1700,7 +2049,7 @@ return (
 
   <div className="space-y-6 w-full">
 
-    <div className={`backdrop-blur-2xl rounded-[32px] p-6 shadow-xl border duration-500 ${
+    <div className={`backdrop-blur-2xl rounded-[32px] p-6 shadow-xl border duration-500  ${
       darkMode
         ? "bg-[#1f2937]/70 border-[#374151]"
         : "bg-white/70 border-white/50"
@@ -1714,13 +2063,50 @@ return (
 
       <p className="text-gray-500 mt-2">
         Student Attendance Management
-       <button
-  onClick={downloadReport}
-  className="w-full h-14 mt-6 rounded-2xl bg-gradient-to-r from-violet-600 to-blue-500 text-white font-bold shadow-lg"
->
-  Download Attendance Report
-</button>
-      </p>
+        </p>
+
+        <div className="grid grid-cols-3 gap-4 mt-6">
+
+  <div className="bg-blue-50 p-4 rounded-2xl">
+    <h2 className="text-3xl font-black">
+      {students.length}
+    </h2>
+    <p>Total Students</p>
+  </div>
+
+  <div className="bg-green-50 p-4 rounded-2xl">
+    <h2 className="text-3xl font-black">
+      {liveAttendance.length}
+    </h2>
+    <p>Present Today</p>
+  </div>
+
+  <div className="bg-red-50 p-4 rounded-2xl">
+    <h2 className="text-3xl font-black">
+      {students.length - liveAttendance.length}
+    </h2>
+    <p>Absent Today</p>
+  </div>
+
+</div>
+<div className="flex gap-3 mt-4">
+
+  <button
+    onClick={downloadReport}
+    className="px-5 py-3 rounded-2xl bg-violet-600 text-white"
+  >
+    Download Report
+  </button>
+
+  <button
+    onClick={() => setLiveAttendance([])}
+    className="px-5 py-3 rounded-2xl bg-red-500 text-white"
+  >
+    Clear Attendance
+  </button>
+
+</div>
+    
       <input
   type="text"
   placeholder="Search student..."
@@ -1780,9 +2166,62 @@ return (
   </div>
 
 </div>
-      <div className="mt-6 space-y-4">
+      <div className="mt-6">
+
+  <h2 className="text-2xl font-bold mb-4">
+    Live Attendance Monitor
+  </h2>
+
+  {liveAttendance.length > 0 ? (
+
+    <div className="space-y-3">
+
+      {liveAttendance.map((student, index) => (
+
+        <div
+          key={index}
+          className="bg-violet-50 rounded-2xl p-4 flex justify-between items-center"
+        >
+
+          <div>
+
+            <h2 className="font-bold text-violet-700">
+              {student.name}
+            </h2>
+
+            <p className="text-sm text-gray-500">
+              {student.subject}
+            </p>
+
+          </div>
+
+          <div className="text-right">
+
+            <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
+              {student.status}
+            </span>
+
+            <p className="text-xs text-gray-400 mt-2">
+              {student.time}
+            </p>
+
+          </div>
+
         </div>
 
+      ))}
+
+    </div>
+
+  ) : (
+
+    <p className="text-gray-400">
+      No attendance recorded yet
+    </p>
+
+  )}
+
+</div>
 {/* WEEKLY CHART */}
 
 <div className="mt-6 bg-white rounded-3xl p-5">
@@ -1937,6 +2376,7 @@ return (
      <p className="text-gray-500 mt-1">
   {studentData?.department}
 </p>
+
 <div className="w-full mt-6 space-y-3">
 
   <div className="bg-violet-50 rounded-2xl p-4">
@@ -2066,6 +2506,27 @@ return (
   <h1 className="text-4xl font-black text-violet-700 mt-2">
     12 Days
   </h1>
+  <div className="mt-6 bg-white rounded-3xl p-5">
+
+  <h2 className="text-xl font-bold">
+    AI Attendance Prediction
+  </h2>
+
+  <div className="mt-4">
+
+    <p className={`font-bold ${getRiskLevel().color}`}>
+      Risk Level: {getRiskLevel().level}
+    </p>
+
+    <p className="text-gray-500 mt-2">
+      {getRiskLevel().message}
+    </p>
+
+  </div>
+
+</div>
+
+  
 
 </div>
 
@@ -2117,21 +2578,126 @@ return (
 
   <div className="grid grid-cols-2 gap-4 mt-6">
 
-  <button className="h-14 rounded-2xl bg-gradient-to-r from-violet-600 to-blue-500 text-white font-bold shadow-lg">
-    Edit Profile
-  </button>
+  <button
+  onClick={() => {
+    setEditPhone(studentData?.phone || "")
+    setShowEditProfile(true)
+  }}
+  className="h-14 rounded-2xl bg-gradient-to-r from-violet-600 to-blue-500 text-white font-bold shadow-lg"
+>
+  Edit Profile
+</button>
 
   <button
     onClick={() => {
-      setLoggedIn(false)
-      setStudentData(null)
-    }}
+
+  setLoggedIn(false)
+  setTeacherLoggedIn(false)
+  setStudentData(null)
+
+  setOtpVerified(false)
+  setFaceDetected(false)
+  setIdentityVerified(false)
+
+  setVerificationMessage("")
+  setPhone("")
+  setInputCode("")
+
+  setCameraOn(false)
+
+  setFaceStatus("No Face")
+  setBlinkDetected(false)
+
+  setActivityFeed([])
+
+  toast.success("Logged Out Successfully")
+
+}}
     className="h-14 rounded-2xl border border-red-200 text-red-600 font-semibold bg-white"
   >
     Logout
   </button>
 
 </div>
+
+<div className="mt-6 bg-white rounded-3xl p-5">
+
+  <h2 className="text-xl font-bold">
+    Preferences
+  </h2>
+
+  <div className="mt-4 flex justify-between items-center">
+
+    <span className="font-medium">
+      🌙 Dark Mode
+    </span>
+
+    <button
+      onClick={() => {
+
+  setDarkMode(!darkMode)
+
+  addActivity(
+    darkMode
+      ? "☀️ Light Mode Enabled"
+      : "🌙 Dark Mode Enabled"
+  )
+
+}}
+      className={`w-14 h-8 rounded-full duration-300 ${
+        darkMode
+          ? "bg-violet-600"
+          : "bg-gray-300"
+      }`}
+    >
+      <div
+        className={`w-6 h-6 bg-white rounded-full duration-300 ${
+          darkMode
+            ? "translate-x-7"
+            : "translate-x-1"
+        }`}
+      />
+    </button>
+
+  </div>
+
+  <div className="mt-4 flex justify-between items-center">
+
+    <span className="font-medium">
+      🎤 Voice Assistant
+    </span>
+
+    <button
+      onClick={() => {
+
+  setVoiceEnabled(!voiceEnabled)
+
+  addActivity(
+    voiceEnabled
+      ? "🎤 Voice Assistant Disabled"
+      : "🎤 Voice Assistant Enabled"
+  )
+
+}}
+      className={`w-14 h-8 rounded-full duration-300 ${
+        voiceEnabled
+          ? "bg-green-500"
+          : "bg-gray-300"
+      }`}
+    >
+      <div
+        className={`w-6 h-6 bg-white rounded-full duration-300 ${
+          voiceEnabled
+            ? "translate-x-7"
+            : "translate-x-1"
+        }`}
+      />
+    </button>
+
+  </div>
+
+</div>
+
 
 </div>
 
@@ -2140,16 +2706,92 @@ return (
 
 </div>
 
+{showEditProfile && (
+
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+
+    <div className="bg-white rounded-3xl p-6 w-[90%] max-w-md">
+
+      <h2 className="text-2xl font-bold mb-4">
+        Edit Profile
+      </h2>
+
+      <input
+        type="text"
+        value={editPhone}
+        onChange={(e) =>
+          setEditPhone(e.target.value)
+        }
+        placeholder="Phone Number"
+        className="w-full h-12 border rounded-2xl px-4 mb-3"
+      />
+
+      <input
+        type="password"
+        value={editPassword}
+        onChange={(e) =>
+          setEditPassword(e.target.value)
+        }
+        placeholder="New Password"
+        className="w-full h-12 border rounded-2xl px-4"
+      />
+
+      <div className="grid grid-cols-2 gap-3 mt-5">
+
+        <button
+          onClick={() =>
+            setShowEditProfile(false)
+          }
+          className="h-12 rounded-2xl bg-gray-200"
+        >
+          Cancel
+        </button>
+
+        <button
+          onClick={() => {
+
+            setStudentData({
+              ...studentData,
+              phone: editPhone
+            })
+
+            toast.success(
+              "Profile Updated"
+            )
+
+            setShowEditProfile(false)
+
+          }}
+          className="h-12 rounded-2xl bg-violet-600 text-white"
+        >
+          Save
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+)}
+
 {/* BOTTOM NAVIGATION */}
 
-<div className={`fixed bottom-5 left-1/2 -translate-x-1/2 w-[90%] max-w-md backdrop-blur-2xl rounded-3xl shadow-xl px-6 py-4 flex justify-between items-center border duration-500 ${
+<div className={`fixed bottom-5 left-1/2 -translate-x-1/2 w-[90%] max-w-2xl backdrop-blur-2xl rounded-3xl shadow-xl px-6 py-4 grid place-items-center
+${
+  teacherLoggedIn
+    ? "grid-cols-5"
+    : "grid-cols-4"
+} border duration-500 ${
   darkMode
     ? "bg-[#111827]/80 border-[#374151]"
     : "bg-white/80 border-white/50"
 }`}
 >
 
-  <button
+  {teacherLoggedIn && (
+
+<button
   onClick={() => setActiveTab("admin")}
   className={`flex flex-col items-center text-sm ${
     activeTab === "admin"
@@ -2160,6 +2802,8 @@ return (
   <User size={22} />
   <span className="mt-1">Admin</span>
 </button>
+
+)}
 
   <button
     onClick={() => setActiveTab("home")}
@@ -2208,12 +2852,16 @@ return (
     <UserCircle size={22} />
     <span className="mt-1">Profile</span>
   </button>
+  <ToastContainer
+  position="top-right"
+  autoClose={3000}
+/>
 
 </div>
 
 </div>
 
-</div>
+</div> 
 
 
   )
